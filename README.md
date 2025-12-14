@@ -183,3 +183,8 @@ Este proyecto está siendo construido como una **solución real para un cliente 
 ---
 
 **Centro CAF Acámbaro — Fisioterapia y Rehabilitación**
+
+---
+
+## 📄 Licencia
+Proyecto distribuido bajo la licencia MIT.
