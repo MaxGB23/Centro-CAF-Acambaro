@@ -1,36 +1,185 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛠️ Centro CAF Acámbaro — Sistema de Gestión
 
-## Getting Started
+Sistema web para la **gestión administrativa, clínica y contable** del *Centro CAF Acámbaro* (Fisioterapia y Rehabilitación). El proyecto busca reemplazar la gestión actual basada en hojas de Excel por una plataforma moderna, tipada y escalable.
 
-First, run the development server:
+---
+
+## 🎯 Objetivo del proyecto
+
+Actualmente, el centro gestiona:
+
+* pacientes
+* sesiones
+* pagos y adelantos
+* citas
+
+mediante **archivos de Excel**, lo que genera:
+
+* trabajo manual repetitivo
+* errores en el control de pagos
+* desorden por exceso de hojas (una por cliente)
+* poca visibilidad del estado real del negocio
+
+Este sistema centraliza toda la información en un **dashboard administrativo**, automatiza reglas de negocio y prepara la base para escalar (reportes, calendario, métricas y más).
+
+---
+
+## 🧱 Tecnologías principales
+
+### Frontend
+
+* **Next.js 16** (App Router)
+* **React 19** (sin React Compiler)
+* **TypeScript**
+* **Tailwind CSS v4**
+* **shadcn/ui**
+* **TanStack React Table** (tablas avanzadas y data grids)
+* **nuqs** (manejo de estado en la URL)
+
+### Backend
+
+* **Next.js API Routes**
+* **Server Actions**
+* **Supabase** (BaaS)
+* **Prisma ORM** (acceso a datos)
+
+### Base de datos
+
+* **PostgreSQL** (Supabase)
+
+### Autenticación
+
+* **Better Auth** (Email + Password)
+
+### Integraciones
+
+* **Cal.com**
+
+  * API REST
+  * Webhooks
+  * Embed Widget
+
+---
+
+## 🧠 Problemática actual
+
+El centro utiliza un archivo de Excel donde:
+
+* cada cliente es una hoja distinta
+* las sesiones se anotan manualmente
+* los pagos y adelantos no siguen una estructura clara
+
+### Ejemplo actual (Excel)
+
+**PAQUETE DE 5 SESIONES**
+
+| Sesión | Fecha            | Detalle             |
+| ------ | ---------------- | ------------------- |
+| 1      | 22/09/2025 12:00 | $1,250              |
+| 2      | 24/09/2025 12:00 | Adelanto $1000      |
+| 3      | 26/09/2025 11:00 | Adelanto $250       |
+| 4      | Pendiente        | 1000 + 250 = PAGADO |
+| 5      | Pendiente        | —                   |
+
+Esto provoca confusión en:
+
+* estado real del pago
+* sesiones pendientes
+* historial por cliente
+
+---
+
+## 🧩 Solución propuesta
+
+### 📊 Dashboard principal
+
+* Tabla CRUD de pacientes con:
+
+  * nombre
+  * edad
+  * patología
+  * paquete
+  * estatus
+  * pagos / adeudos
+* Edición inline
+* Reordenamiento
+* Navegación directa a detalle por cliente
+
+### 📈 Visualización de métricas
+
+* Total de pacientes
+* Pacientes activos
+* Contabilidad por:
+
+  * mes
+  * quincena
+  * periodo personalizado
+
+### 👤 Vista detalle de cliente
+
+Al seleccionar un cliente:
+
+* Información personal
+* Tabla CRUD de sesiones
+* Historial de pagos y adelantos
+* Estado derivado automático (activo, adeudo, terminado, inactivo)
+
+### 📅 Citas (planeado)
+
+* Vista de calendario (día / semana)
+* Sincronización con **Cal.com** vía webhook
+* Inserción automática de citas en la base de datos
+* Relación cita ↔ cliente
+
+---
+
+## 🔐 Autenticación y seguridad
+
+* Login y registro con **Better Auth**
+* Sesiones tipadas end-to-end
+* Protección de rutas privadas (`/dashboard`)
+* Roles y campos administrativos preparados para backend
+
+---
+
+## 🗂️ Arquitectura y enfoque
+
+* App Router (Server + Client Components)
+* Tipado fuerte de punta a punta
+* Reglas de negocio derivadas (no duplicar estado)
+* Enums compartidos entre frontend y base de datos
+* Preparado para escalar sin deuda técnica temprana
+
+---
+
+## 🚀 Cómo correr el proyecto
+
+### 📦 Instalación
+Instala las dependencias del proyecto ejecutando:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛣️ Roadmap
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+* [ ] Persistencia completa con Prisma Client
+* [ ] CRUD API para clientes, sesiones y pagos
+* [ ] Dashboard financiero avanzado
+* [ ] Calendario de citas sincronizado con Cal.com
+* [ ] Reportes exportables
+* [ ] Control de roles administrativos
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📌 Estado del proyecto
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+🟡 En desarrollo activo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Este proyecto está siendo construido como una **solución real para un cliente real**, priorizando claridad, mantenibilidad y escalabilidad.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Centro CAF Acámbaro — Fisioterapia y Rehabilitación**
