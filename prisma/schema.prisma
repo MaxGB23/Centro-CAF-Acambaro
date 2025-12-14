@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  Viewer
+  Editor
+  Admin
+}
+
+enum Position {
+Fisioterapeuta
+Secretaria
+Secretario
+Otro
+}
+
+enum ClientStatus {
+  Activo
+  Inactivo
+}
+
+enum PackageStatus {
+  Activo
+  Terminado
+  Cancelado
+}
+
+enum PackageType {
+  S5 // 5 sesiones
+  S10 // 10 sesiones
+  S15 // 15 sesiones
+  S20 // 20 sesiones
+}
+
+enum SessionStatus {
+  Pendiente
+  Asistida
+  Cancelada
+}
+
+enum PaymentType {
+  Adelanto
+  Pago
+}
+
+
+// 
+// enum Pakage {
+// 5 sesiones $1250
+// 10 sesiones $2500
+// 15 sesiones $3900
+// 20 sesiones $5200
+// }
+
+model User {
+  id            String    @id
+  name          String
+  email         String    
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role    @default(Viewer)
+  position      Position @default(Otro)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Client {
+  id          String        @id @default(uuid())
+  name        String
+  age         Int
+  pathology   String
+  email       String?
+  phone       String?
+  notes       String?
+  status      ClientStatus  @default(Activo)
+
+  packages    ClientPackage[]
+  appointments Appointment[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("clients")
+}
+
+model ClientPackage {
+  id           String        @id @default(uuid())
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  packageType  PackageType
+  totalPrice   Int
+  status       PackageStatus @default(Activo)
+  startDate    DateTime      @default(now())
+
+  sessions     SessionRecord[]
+  payments     Payment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clientId])
+  @@map("client_packages")
+}
+
+model SessionRecord {
+  id               String        @id @default(uuid())
+  clientPackageId  String
+  clientPackage    ClientPackage @relation(fields: [clientPackageId], references: [id], onDelete: Cascade)
+
+  sessionNumber    Int
+  sessionDate      DateTime?
+  status           SessionStatus @default(Pendiente)
+
+  createdAt        DateTime @default(now())
+
+  @@index([clientPackageId])
+  @@map("session_records")
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  clientPackageId  String
+  clientPackage    ClientPackage @relation(fields: [clientPackageId], references: [id], onDelete: Cascade)
+
+  amount           Int
+  type             PaymentType
+  paymentDate      DateTime @default(now())
+  notes            String?
+
+  createdAt        DateTime @default(now())
+
+  @@index([clientPackageId])
+  @@map("payments")
+}
+
+model Appointment {
+  id           String   @id @default(uuid())
+  clientId     String?
+  client       Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  startTime    DateTime
+  endTime      DateTime
+  calEventId   String   @unique
+
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+  @@map("appointments")
+}
+
