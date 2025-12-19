@@ -12,7 +12,7 @@ export function RegisterPage() {
       </div>
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/images/or.jpg"
+          src="/images/scmc2.jpg"
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.8]"
         />

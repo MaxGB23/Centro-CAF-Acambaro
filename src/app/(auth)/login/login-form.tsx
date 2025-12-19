@@ -3,16 +3,8 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-} from "@/components/ui/field"
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { signInEmail } from "@/server/auth-actions"
 import z from "zod"
 import { authClient } from "@/lib/auth-client"
 import { Controller, useForm } from "react-hook-form"
@@ -64,8 +56,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     setLoading(false);
 
     if (error?.code) {
-          setError(erroresES[error.code] || "Por favor intenta de nuevo.");
-        } else {
+      setError(erroresES[error.code] || "Por favor intenta de nuevo.");
+    } else {
       toast.success("Bienvenido de nuevo!");
       router.push(redirect ?? "/dashboard");
     }

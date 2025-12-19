@@ -33,11 +33,14 @@ enum ClientStatus {
 
 enum PackageStatus {
   Activo
+  Adeudo
+  Pagado
   Terminado
-  Cancelado
+  
 }
 
 enum PackageType {
+  S1 // 1 sesión
   S5 // 5 sesiones
   S10 // 10 sesiones
   S15 // 15 sesiones
@@ -46,13 +49,13 @@ enum PackageType {
 
 enum SessionStatus {
   Pendiente
-  Asistida
+  Completada
   Cancelada
 }
 
 enum PaymentType {
-  Adelanto
-  Pago
+  Efectivo
+  Otro
 }
 
 

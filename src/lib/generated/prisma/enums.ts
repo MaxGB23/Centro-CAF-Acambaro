@@ -11,6 +11,7 @@
 
 export const Role = {
   Viewer: 'Viewer',
+  Editor: 'Editor',
   Admin: 'Admin'
 } as const
 
@@ -20,7 +21,54 @@ export type Role = (typeof Role)[keyof typeof Role]
 export const Position = {
   Fisioterapeuta: 'Fisioterapeuta',
   Secretaria: 'Secretaria',
-  Empleado: 'Empleado'
+  Secretario: 'Secretario',
+  Otro: 'Otro'
 } as const
 
 export type Position = (typeof Position)[keyof typeof Position]
+
+
+export const ClientStatus = {
+  Activo: 'Activo',
+  Inactivo: 'Inactivo'
+} as const
+
+export type ClientStatus = (typeof ClientStatus)[keyof typeof ClientStatus]
+
+
+export const PackageStatus = {
+  Activo: 'Activo',
+  Adeudo: 'Adeudo',
+  Pagado: 'Pagado',
+  Terminado: 'Terminado'
+} as const
+
+export type PackageStatus = (typeof PackageStatus)[keyof typeof PackageStatus]
+
+
+export const PackageType = {
+  S1: 'S1',
+  S5: 'S5',
+  S10: 'S10',
+  S15: 'S15',
+  S20: 'S20'
+} as const
+
+export type PackageType = (typeof PackageType)[keyof typeof PackageType]
+
+
+export const SessionStatus = {
+  Pendiente: 'Pendiente',
+  Completada: 'Completada',
+  Cancelada: 'Cancelada'
+} as const
+
+export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus]
+
+
+export const PaymentType = {
+  Efectivo: 'Efectivo',
+  Otro: 'Otro'
+} as const
+
+export type PaymentType = (typeof PaymentType)[keyof typeof PaymentType]

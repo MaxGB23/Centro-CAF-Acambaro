@@ -44,7 +44,7 @@ const data = {
   user: {
     name: "Mario Soto",
     email: "fisioterapiayrehabilitacioncaf@gmail.com",
-    avatar: "/images/or.jpg",
+    avatar: "/images/scfn.jpg",
   },
   navMain: [
     {

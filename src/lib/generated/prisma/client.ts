@@ -59,3 +59,28 @@ export type Account = Prisma.AccountModel
  * 
  */
 export type Verification = Prisma.VerificationModel
+/**
+ * Model Client
+ * 
+ */
+export type Client = Prisma.ClientModel
+/**
+ * Model ClientPackage
+ * 
+ */
+export type ClientPackage = Prisma.ClientPackageModel
+/**
+ * Model SessionRecord
+ * 
+ */
+export type SessionRecord = Prisma.SessionRecordModel
+/**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel
+/**
+ * Model Appointment
+ * 
+ */
+export type Appointment = Prisma.AppointmentModel

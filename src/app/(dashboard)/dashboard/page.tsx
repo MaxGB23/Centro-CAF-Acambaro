@@ -1,9 +1,10 @@
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
-import data from "./data.json"
+// import data from "./data.json"
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getDashboardClients } from "@/server/queries/clients";
 
 export default async function Page() {
 
@@ -14,6 +15,8 @@ export default async function Page() {
   if (!session) {
     redirect("/login");
   }
+
+  const data = await getDashboardClients();
 
   return (
     <div className="flex flex-1 flex-col">

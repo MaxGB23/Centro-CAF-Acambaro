@@ -2,6 +2,9 @@
   "name": "pruebasincompiler",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -34,6 +37,7 @@
     "better-auth": "^1.4.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.555.0",
     "next": "16.0.10",

@@ -54,7 +54,12 @@ export const ModelName = {
   User: 'User',
   Session: 'Session',
   Account: 'Account',
-  Verification: 'Verification'
+  Verification: 'Verification',
+  Client: 'Client',
+  ClientPackage: 'ClientPackage',
+  SessionRecord: 'SessionRecord',
+  Payment: 'Payment',
+  Appointment: 'Appointment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -131,6 +136,73 @@ export const VerificationScalarFieldEnum = {
 } as const
 
 export type VerificationScalarFieldEnum = (typeof VerificationScalarFieldEnum)[keyof typeof VerificationScalarFieldEnum]
+
+
+export const ClientScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  age: 'age',
+  pathology: 'pathology',
+  email: 'email',
+  phone: 'phone',
+  notes: 'notes',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClientScalarFieldEnum = (typeof ClientScalarFieldEnum)[keyof typeof ClientScalarFieldEnum]
+
+
+export const ClientPackageScalarFieldEnum = {
+  id: 'id',
+  clientId: 'clientId',
+  packageType: 'packageType',
+  totalPrice: 'totalPrice',
+  status: 'status',
+  startDate: 'startDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClientPackageScalarFieldEnum = (typeof ClientPackageScalarFieldEnum)[keyof typeof ClientPackageScalarFieldEnum]
+
+
+export const SessionRecordScalarFieldEnum = {
+  id: 'id',
+  clientPackageId: 'clientPackageId',
+  sessionNumber: 'sessionNumber',
+  sessionDate: 'sessionDate',
+  status: 'status',
+  createdAt: 'createdAt'
+} as const
+
+export type SessionRecordScalarFieldEnum = (typeof SessionRecordScalarFieldEnum)[keyof typeof SessionRecordScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  clientPackageId: 'clientPackageId',
+  amount: 'amount',
+  type: 'type',
+  paymentDate: 'paymentDate',
+  notes: 'notes',
+  createdAt: 'createdAt'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const AppointmentScalarFieldEnum = {
+  id: 'id',
+  clientId: 'clientId',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  calEventId: 'calEventId',
+  createdAt: 'createdAt'
+} as const
+
+export type AppointmentScalarFieldEnum = (typeof AppointmentScalarFieldEnum)[keyof typeof AppointmentScalarFieldEnum]
 
 
 export const SortOrder = {

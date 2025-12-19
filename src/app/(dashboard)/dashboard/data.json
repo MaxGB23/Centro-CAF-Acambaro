@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "nombre": "María López",
+    "nombre": "María González López",
     "edad": 34,
     "patologia": "Lumbalgia crónica",
     "paqueteActivo": "5 sesiones",
@@ -12,7 +12,7 @@
   },
   {
     "id": 2,
-    "nombre": "Juan Martínez",
+    "nombre": "Carlos Ramírez",
     "edad": 45,
     "patologia": "Esguince de tobillo",
     "paqueteActivo": "10 sesiones",
@@ -23,7 +23,7 @@
   },
   {
     "id": 3,
-    "nombre": "Carmen Rodríguez",
+    "nombre": "Ana Torres",
     "edad": 28,
     "patologia": "Cervicalgia",
     "paqueteActivo": "10 sesiones",

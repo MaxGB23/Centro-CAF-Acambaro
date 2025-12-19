@@ -34,6 +34,9 @@ import {
   IconLoader,
   IconPlus,
   IconTrendingUp,
+  IconSearch,
+  IconFilter,
+  IconX,
 } from "@tabler/icons-react"
 import {
   ColumnDef,
@@ -53,6 +56,8 @@ import {
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { toast } from "sonner"
 import { z } from "zod"
+import { format, formatDistanceToNow } from "date-fns"
+import { es } from "date-fns/locale"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -95,21 +100,42 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { createClient } from "@/server/actions/create-client"
+import { useRouter } from "next/navigation"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 
 export const schema = z.object({
-  id: z.number(),
+  id: z.string(),
   nombre: z.string(),
   edad: z.number(),
   patologia: z.string(),
-  paqueteActivo: z.string(),
+  paqueteActivo: z.enum(["S1", "S5", "S10", "S15", "S20"]).nullable(),
   sesiones: z.string(),
-  estatus: z.string(),
+  estatus: z.enum(["Activo", "Adeudo", "Pagado", "Terminado", "Inactivo"]),
   adeudo: z.number(),
-  proximaCita: z.string().datetime(),
+  siguienteSesion: z.date().nullable(),
 })
 
 // Create a separate component for the drag handle
-function DragHandle({ id }: { id: number }) {
+function DragHandle({ id }: { id: string }) {
   const { attributes, listeners } = useSortable({
     id,
   })
@@ -126,6 +152,14 @@ function DragHandle({ id }: { id: number }) {
       <span className="sr-only">Drag to reorder</span>
     </Button>
   )
+}
+
+const packageMap: Record<string, string> = {
+  S1: "1 Sesión",
+  S5: "5 Sesiones",
+  S10: "10 Sesiones",
+  S15: "15 Sesiones",
+  S20: "20 Sesiones",
 }
 
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
@@ -164,7 +198,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "nombre",
     header: "Nombre",
     cell: ({ row }) => (
-      <Link 
+      <Link
         href={`/dashboard/cliente/${row.original.id}`}
         className="text-primary font-medium  hover:text-blue-700 dark:hover:text-blue-300"
       >
@@ -177,119 +211,74 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "edad",
     header: "Edad",
     cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          toast.success(`Edad actualizada a ${row.original.edad}`)
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-edad`} className="sr-only">
-          Edad
-        </Label>
-        <Input
-          className="hover:bg-input/40 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent shadow-none focus-visible:border dark:bg-transparent"
-          type="text"
-          defaultValue={row.original.edad}
-          id={`${row.original.id}-edad`}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.form?.dispatchEvent(new Event("submit", { bubbles: true }))
-            }
-          }}
-        />
-      </form>
+      <div className="text-sm pl-1">
+        {row.original.edad}
+      </div>
     ),
-  },
-
-  {
+  }, {
     accessorKey: "patologia",
     header: "Patología",
     cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          toast.success(`Patología actualizada`)
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-patologia`} className="sr-only">
-          Patología
-        </Label>
-        <Input
-          className="hover:bg-input/40 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 min-w-40 border-transparent bg-transparent shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.patologia}
-          id={`${row.original.id}-patologia`}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.form?.dispatchEvent(new Event("submit", { bubbles: true }))
-            }
-          }}
-        />
-      </form>
+      <div className="text-sm">
+        {row.original.patologia}
+      </div>
     ),
   },
-
   {
     accessorKey: "paqueteActivo",
     header: "Paquete",
     cell: ({ row }) => (
-      <Select defaultValue={row.original.paqueteActivo}>
-        <SelectTrigger className="w-36 h-8">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent align="end">
-          <SelectItem value="5 sesiones">5 sesiones</SelectItem>
-          <SelectItem value="10 sesiones">10 sesiones</SelectItem>
-          <SelectItem value="15 sesiones">15 sesiones</SelectItem>
-          <SelectItem value="20 sesiones">20 sesiones</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="text-sm">
+        {row.original.paqueteActivo ? packageMap[row.original.paqueteActivo] : "Sin paquete"}
+      </div>
     ),
   },
   {
     accessorKey: "sesiones",
     header: "Sesiones",
     cell: ({ row }) => (
-      <div className="text-sm">
+      <div className="text-sm pl-1.5">
         {row.original.sesiones}
       </div>
     ),
   },
 
-{
+  {
     accessorKey: "estatus",
     header: "Estatus",
     cell: ({ row }) => (
-      <Select defaultValue={row.original.estatus}>
-        <SelectTrigger className="w-32 h-8">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent align="end">
-          <SelectItem value="Activo">
-            <div className="flex items-center gap-2">
-              <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400 size-4" />
-              Activo
-            </div>
-          </SelectItem>
-          <SelectItem value="Adeudo">
-            <div className="flex items-center gap-2">
-              <IconLoader className="size-4" />
-              Adeudo
-            </div>
-          </SelectItem>
-          <SelectItem value="Terminado">
-            <div className="flex items-center gap-2">
-              <IconCircleCheckFilled className="fill-blue-500 dark:fill-blue-400 size-4" />
-              Terminado
-            </div>
-          </SelectItem>
-          <SelectItem value="Inactivo">
-            <div className="flex items-center gap-2">
-              <IconLoader className="size-4" />
-              Inactivo
-            </div>
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      <>
+        {row.original.estatus === "Activo" && (
+          <Badge variant="default" className="gap-1.5 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
+            <IconCircleCheckFilled className="size-3" />
+            Activo
+          </Badge>
+        )}
+        {row.original.estatus === "Adeudo" && (
+          <Badge variant="secondary" className="gap-1.5 bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100 hover:bg-amber-200 dark:hover:bg-amber-800">
+            <IconLoader className="size-3 animate-spin" />
+            Adeudo
+          </Badge>
+        )}
+        {row.original.estatus === "Pagado" && (
+          <Badge variant="default" className="gap-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+            <IconCircleCheckFilled className="size-3" />
+            Pagado
+          </Badge>
+        )}
+        {row.original.estatus === "Terminado" && (
+          <Badge variant="default" className="gap-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-600">
+            <IconCircleCheckFilled className="size-3" />
+            Terminado
+          </Badge>
+        )}
+        {row.original.estatus === "Inactivo" && (
+          <Badge variant="secondary" className="gap-1.5 bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+            <IconLoader className="size-3" />
+            Inactivo
+          </Badge>
+        )}
+      </>
     ),
   },
 
@@ -297,42 +286,36 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "adeudo",
     header: "Adeudo",
     cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          toast.success(`Adeudo actualizado a $${row.original.adeudo}`)
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-adeudo`} className="sr-only">
-          Adeudo
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-24 border-transparent bg-transparent shadow-none focus-visible:border dark:bg-transparent"
-          type="text"
-          defaultValue={row.original.adeudo}
-          id={`${row.original.id}-adeudo`}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.form?.dispatchEvent(new Event("submit", { bubbles: true }))
-            }
-          }}
-        />
-      </form>
+      <div className={`text-sm ${row.original.adeudo > 0 ? "text-red-500 font-semibold dark:text-destructive" : "text-black dark:text-white"}`}>
+        {row.original.adeudo === 0 ? "Al corriente" : row.original.adeudo}
+      </div>
     ),
   },
   {
-    accessorKey: "proximaCita",
+    accessorKey: "Cita",
     header: "Próxima Cita",
-    cell: ({ row }) => (
-      <div className="text-sm">
-        {new Date(row.original.proximaCita).toLocaleDateString("es-ES", {
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const date = row.original.siguienteSesion
+
+      if (!date) return <div className="text-sm text-muted-foreground">No programada</div>
+
+      return (
+        // coloca arriba la fecha y abajo el tiempo restante
+        <div className="text-sm">
+          <div className="">
+            {/* el formato de fecha debe ser ejemplo 12 de Mayo y español */}
+            {format(new Date(date), "dd 'de' MMMM", { locale: es })}
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Cita {formatDistanceToNow(new Date(date), {
+              addSuffix: true,
+              locale: es,
+            })}
+          </span>
+
+        </div>
+      )
+    },
   },
   {
     id: "actions",
@@ -409,6 +392,54 @@ export function DataTable({
     useSensor(KeyboardSensor, {})
   )
 
+  const router = useRouter()
+
+  const [openCreateClient, setOpenCreateClient] = React.useState(false)
+  const [isCreating, setIsCreating] = React.useState(false)
+
+  const clientFormSchema = z.object({
+    name: z.string().min(1, "El nombre es requerido"),
+    age: z.coerce.number().min(1, "La edad es requerida"),
+    phone: z.string().optional(),
+    email: z.string().email("Email inválido").optional().or(z.literal("")),
+    pathology: z.string().min(1, "La patología es requerida"),
+    notes: z.string().optional(),
+  })
+
+  type ClientFormValues = z.input<typeof clientFormSchema>
+
+  const form = useForm<ClientFormValues>({
+    resolver: zodResolver(clientFormSchema),
+    defaultValues: {
+      name: "",
+      age: 0,
+      phone: "",
+      email: "",
+      pathology: "",
+      notes: "",
+    },
+  })
+
+  async function onSubmit(data: ClientFormValues) {
+    setIsCreating(true)
+
+    // Ensure values are coerced/validated to the expected output types
+    const parsed = clientFormSchema.parse(data)
+
+    const res = await createClient(parsed)
+
+    setIsCreating(false)
+    if (res.error) {
+      toast.error(res.error)
+    } else {
+      toast.success("Cliente creado correctamente")
+      form.reset()
+      router.refresh()
+      setOpenCreateClient(false)
+    }
+  }
+
+
   const dataIds = React.useMemo<UniqueIdentifier[]>(
     () => data?.map(({ id }) => id) || [],
     [data]
@@ -455,73 +486,223 @@ export function DataTable({
       defaultValue="outline"
       className="w-full flex-col justify-start gap-6"
     >
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <Select defaultValue="outline">
-          <SelectTrigger
-            className="flex w-fit @4xl/main:hidden"
-            size="sm"
-            id="view-selector"
-          >
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Esquema</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Rendimiento Pasado <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Personal clave <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Documentos clave</TabsTrigger>
-        </TabsList>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <IconLayoutColumns />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <IconChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
+        <div className="flex flex-col md:flex-row gap-4 justify-between">
+          <div className="flex flex-1 items-center space-x-2">
+            <div className="relative max-w-sm flex-1">
+              <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar clientes..."
+                value={(table.getColumn("nombre")?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  table.getColumn("nombre")?.setFilterValue(event.target.value)
+                }
+                className="pl-9"
+              />
+            </div>
+            {table.getColumn("estatus") && (
+              <div className="flex items-center space-x-2">
+                <Select
+                  value={(table.getColumn("estatus")?.getFilterValue() as string) ?? "all"}
+                  onValueChange={(value) => {
+                    if (value === "all") {
+                      table.getColumn("estatus")?.setFilterValue(undefined)
+                    } else {
+                      table.getColumn("estatus")?.setFilterValue(value)
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <IconFilter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Filtrar por estatus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estatus</SelectItem>
+                    <SelectItem value="Activo">Activo</SelectItem>
+                    <SelectItem value="Inactivo">Inactivo</SelectItem>
+                    <SelectItem value="Adeudo">Adeudo</SelectItem>
+                    <SelectItem value="Pagado">Pagado</SelectItem>
+                    <SelectItem value="Terminado">Terminado</SelectItem>
+                  </SelectContent>
+                </Select>
+                {table.getState().columnFilters.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3"
+                  >
+                    Reset
+                    <IconX className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <IconLayoutColumns />
+                  <span className="hidden lg:inline">Columnas</span>
+                  <span className="lg:hidden">Columnas</span>
+                  <IconChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {table
+                  .getAllColumns()
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== "undefined" &&
+                      column.getCanHide()
                   )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <IconPlus />
-            <span className="hidden lg:inline">Add Section</span>
-          </Button>
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Dialog open={openCreateClient} onOpenChange={setOpenCreateClient}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <IconPlus />
+                  <span className="hidden lg:inline">Agregar Cliente</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                  <DialogHeader>
+                    <DialogTitle>Agregar nuevo cliente</DialogTitle>
+                    <DialogDescription>
+                      Ingresa los datos del nuevo cliente para registrarlo en el sistema.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <FieldGroup>
+                      <Controller
+                        name="name"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel className="gap-0.5" htmlFor="name">Nombre completo<span className="text-red-500">*</span></FieldLabel>
+                            <Input {...field} id="name" placeholder="Nombre del cliente" />
+                            {fieldState.error && (
+                              <FieldError errors={[fieldState.error]} />
+                            )}
+                          </Field>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <Controller
+                          name="age"
+                          control={form.control}
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                              <FieldLabel className="gap-0.5" htmlFor="age">Edad<span className="text-red-500">*</span></FieldLabel>
+                              <Input
+                                name={field.name}
+                                ref={field.ref}
+                                onBlur={field.onBlur}
+                                value={(field.value as number | string) ?? ""}
+                                onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                                id="age"
+                                type="number"
+                                placeholder="Ej. 30"
+                              />
+                              {fieldState.error && (
+                                <FieldError errors={[fieldState.error]} />
+                              )}
+                            </Field>
+                          )}
+                        />
+                        <Controller
+                          name="phone"
+                          control={form.control}
+                          render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                              <FieldLabel htmlFor="phone">Teléfono (opcional)</FieldLabel>
+                              <Input {...field} id="phone" placeholder="55 1234 5678" />
+                              {fieldState.error && (
+                                <FieldError errors={[fieldState.error]} />
+                              )}
+                            </Field>
+                          )}
+                        />
+                      </div>
+
+                      <Controller
+                        name="email"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="email">Email (opcional)</FieldLabel>
+                            <Input {...field} id="email" type="email" placeholder="cliente@ejemplo.com" />
+                            {fieldState.error && (
+                              <FieldError errors={[fieldState.error]} />
+                            )}
+                          </Field>
+                        )}
+                      />
+
+                      <Controller
+                        name="pathology"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel className="gap-0.5" htmlFor="pathology">Patología<span className="text-red-500">*</span></FieldLabel>
+                            <Input {...field} id="pathology" placeholder="Ej. Dolor lumbar" />
+                            {fieldState.error && (
+                              <FieldError errors={[fieldState.error]} />
+                            )}
+                          </Field>
+                        )}
+                      />
+
+                      <Controller
+                        name="notes"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="notes">Notas (opcional)</FieldLabel>
+                            <Textarea {...field} id="notes" rows={3} placeholder="Observaciones adicionales" />
+                            {fieldState.error && (
+                              <FieldError errors={[fieldState.error]} />
+                            )}
+                          </Field>
+                        )}
+                      />
+                    </FieldGroup>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" type="button" onClick={() => setOpenCreateClient(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={isCreating}>
+                      {isCreating ? (
+                        <>
+                          <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        "Guardar cliente"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
       <TabsContent
