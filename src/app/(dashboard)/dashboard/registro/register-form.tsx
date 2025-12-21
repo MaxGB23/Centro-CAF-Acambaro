@@ -60,8 +60,8 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
       password: values.password,
       name: values.name,
     });
-
     if (error?.code) {
+      toast.error("Por favor intenta de nuevo.");
       setError(erroresES[error.code] || "Por favor intenta de nuevo.");
     } else {
       toast.success("Usuario registrado con éxito!");
@@ -86,7 +86,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
           <p className="text-muted-foreground text-sm text-balance">
             Llena el siguiente formulario para crear un usuario
           </p>
-          
+
 
 
         </div>
@@ -123,9 +123,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
               {fieldState.error ? (
                 <FieldError className="pl-1" errors={[fieldState.error]} />
               ) : (
-                  <FieldDescription className="pl-1">
-                    Usaremos esto para identificarte
-                  </FieldDescription>
+                <FieldDescription className="pl-1">
+                  Usaremos esto para identificarte
+                </FieldDescription>
               )}
             </Field>
           )}
@@ -142,9 +142,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
               {fieldState.error ? (
                 <FieldError className="pl-1" errors={[fieldState.error]} />
               ) : (
-                  <FieldDescription className="pl-1">
-                    8 caracteres y un símbolo
-                  </FieldDescription>
+                <FieldDescription className="pl-1">
+                  8 caracteres y un símbolo
+                </FieldDescription>
               )}
             </Field>
           )}
@@ -166,9 +166,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
               {fieldState.error ? (
                 <FieldError className="pl-1" errors={[fieldState.error]} />
               ) : (
-                  <FieldDescription className="pl-1">
-                    Debe coincidir con la contraseña
-                  </FieldDescription>
+                <FieldDescription className="pl-1">
+                  Debe coincidir con la contraseña
+                </FieldDescription>
               )}
             </Field>
           )}
@@ -188,7 +188,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
 
         <FieldSeparator>Loviu</FieldSeparator>
 
-        
+
       </FieldGroup>
     </form>
   );

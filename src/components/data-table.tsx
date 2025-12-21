@@ -37,7 +37,9 @@ import {
   IconSearch,
   IconFilter,
   IconX,
+  IconTrash,
 } from "@tabler/icons-react"
+import { deleteClient } from "@/server/actions/delete-client"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -129,7 +131,8 @@ export const schema = z.object({
   patologia: z.string(),
   paqueteActivo: z.enum(["S1", "S5", "S10", "S15", "S20"]).nullable(),
   sesiones: z.string(),
-  estatus: z.enum(["Activo", "Adeudo", "Pagado", "Terminado", "Inactivo"]),
+  estatusCliente: z.enum(["Activo", "Inactivo"]),
+  estatusPaquete: z.enum(["Activo", "Terminado"]).nullable(),
   adeudo: z.number(),
   siguienteSesion: z.date().nullable(),
 })
@@ -160,6 +163,87 @@ const packageMap: Record<string, string> = {
   S10: "10 Sesiones",
   S15: "15 Sesiones",
   S20: "20 Sesiones",
+}
+
+function ClientActions({ id }: { id: string }) {
+  const [isDeleting, setIsDeleting] = React.useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
+  const router = useRouter()
+
+  async function onDelete() {
+    setIsDeleting(true)
+    const result = await deleteClient(id)
+    setIsDeleting(false)
+    setShowDeleteDialog(false)
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Cliente eliminado correctamente")
+      router.refresh()
+    }
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+            size="icon"
+          >
+            <IconDotsVertical />
+            <span className="sr-only">Abrir menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem
+            variant="default"
+            onSelect={() => setShowDeleteDialog(true)}
+          >
+            <IconTrash className="mr-2 h-4 w-4 text-destructive" />
+            <span>Eliminar</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Estás completamente seguro?</DialogTitle>
+            <DialogDescription className="py-4">
+              Esta acción no se puede deshacer. Esto eliminará permanentemente al
+              cliente y todos sus datos asociados (paquetes, sesiones y pagos).
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={onDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                "Eliminar cliente"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
 }
 
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
@@ -219,7 +303,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "patologia",
     header: "Patología",
     cell: ({ row }) => (
-      <div className="text-sm">
+      // el texto salta de la celda, hacer que se ajuste a la celda
+      <div className="text-sm whitespace-normal break-words">
         {row.original.patologia}
       </div>
     ),
@@ -238,45 +323,70 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Sesiones",
     cell: ({ row }) => (
       <div className="text-sm pl-1.5">
+        {/* sesiones usadas / total de sesiones del paquete */}
+
         {row.original.sesiones}
+
       </div>
     ),
   },
 
   {
-    accessorKey: "estatus",
-    header: "Estatus",
+    accessorKey: "estatusCliente",
+    header: "Estatus Cliente",
+    enableColumnFilter: true,
+    filterFn: (row, columnId, filterValue) => {
+      if (!filterValue) return true
+      return String(row.getValue(columnId)) === String(filterValue)
+    },
     cell: ({ row }) => (
       <>
-        {row.original.estatus === "Activo" && (
-          <Badge variant="default" className="gap-1.5 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
-            <IconCircleCheckFilled className="size-3" />
+        {row.original.estatusCliente === "Activo" && (
+          <Badge variant="outline" className="gap-1.5 p-4 py-2 text-sm">
+            <IconCircleCheckFilled className="text-green-500 dark:text-emerald-400" />
             Activo
           </Badge>
         )}
-        {row.original.estatus === "Adeudo" && (
-          <Badge variant="secondary" className="gap-1.5 bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100 hover:bg-amber-200 dark:hover:bg-amber-800">
-            <IconLoader className="size-3 animate-spin" />
-            Adeudo
-          </Badge>
-        )}
-        {row.original.estatus === "Pagado" && (
-          <Badge variant="default" className="gap-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-            <IconCircleCheckFilled className="size-3" />
-            Pagado
-          </Badge>
-        )}
-        {row.original.estatus === "Terminado" && (
-          <Badge variant="default" className="gap-1.5 bg-slate-600 hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-600">
-            <IconCircleCheckFilled className="size-3" />
-            Terminado
-          </Badge>
-        )}
-        {row.original.estatus === "Inactivo" && (
-          <Badge variant="secondary" className="gap-1.5 bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-            <IconLoader className="size-3" />
+        {row.original.estatusCliente === "Inactivo" && (
+          <Badge variant="outline" className="gap-1.5 p-4 py-2 text-sm bg-gray-50 text-black dark:bg-neutral-900 dark:text-white">
+            <IconX className="text-destructive dark:text-pink-400" />
             Inactivo
           </Badge>
+        )}
+      </>
+    ),
+  },
+  {
+    accessorKey: "estatusPaquete",
+    header: "Estatus Paquete",
+    cell: ({ row }) => (
+      <>
+        {row.original.estatusPaquete === "Activo" ? (
+          row.original.adeudo <= 0 ? (
+            <Badge
+              variant="outline" className="gap-1.5 p-4 py-2 text-sm">
+              <IconCircleCheckFilled className="text-blue-500 dark:text-cyan-400" />
+              Activo/Pagado
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="gap-1.5 p-4 py-2 text-sm"
+            >
+              <IconCircleCheckFilled className="text-destructive dark:text-pink-500" />
+              Activo/Adeudo
+            </Badge>
+          )
+        ) : row.original.estatusPaquete === "Terminado" ? (
+          <Badge
+            variant="outline"
+            className="gap-1.5 p-4 py-2 text-sm"
+          >
+            <IconCircleCheckFilled />
+            Concluido
+          </Badge>
+        ) : (
+          <div className="text-sm text-muted-foreground pl-2">Sin paquete</div>
         )}
       </>
     ),
@@ -286,8 +396,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "adeudo",
     header: "Adeudo",
     cell: ({ row }) => (
-      <div className={`text-sm ${row.original.adeudo > 0 ? "text-red-500 font-semibold dark:text-destructive" : "text-black dark:text-white"}`}>
-        {row.original.adeudo === 0 ? "Al corriente" : row.original.adeudo}
+      <div className={` ${row.original.adeudo > 0 ? "text-red-500 font-semibold dark:text-destructive text-lg" : "text-black dark:text-white"}`}>
+        {row.original.adeudo === 0 ? "Al corriente" : `$${row.original.adeudo}`}
       </div>
     ),
   },
@@ -319,26 +429,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Abrir</DropdownMenuItem>
-          <DropdownMenuItem>Editar</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Eliminar</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => <ClientActions id={row.original.id} />,
   },
 
 ]
@@ -500,15 +591,15 @@ export function DataTable({
                 className="pl-9"
               />
             </div>
-            {table.getColumn("estatus") && (
+            {table.getColumn("estatusCliente") && (
               <div className="flex items-center space-x-2">
                 <Select
-                  value={(table.getColumn("estatus")?.getFilterValue() as string) ?? "all"}
+                  value={(table.getColumn("estatusCliente")?.getFilterValue() as string) ?? "all"}
                   onValueChange={(value) => {
                     if (value === "all") {
-                      table.getColumn("estatus")?.setFilterValue(undefined)
+                      table.getColumn("estatusCliente")?.setFilterValue(undefined)
                     } else {
-                      table.getColumn("estatus")?.setFilterValue(value)
+                      table.getColumn("estatusCliente")?.setFilterValue(value)
                     }
                   }}
                 >
@@ -517,12 +608,9 @@ export function DataTable({
                     <SelectValue placeholder="Filtrar por estatus" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos los estatus</SelectItem>
-                    <SelectItem value="Activo">Activo</SelectItem>
-                    <SelectItem value="Inactivo">Inactivo</SelectItem>
-                    <SelectItem value="Adeudo">Adeudo</SelectItem>
-                    <SelectItem value="Pagado">Pagado</SelectItem>
-                    <SelectItem value="Terminado">Terminado</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="Activo">Cliente Activo</SelectItem>
+                    <SelectItem value="Inactivo">Cliente Inactivo</SelectItem>
                   </SelectContent>
                 </Select>
                 {table.getState().columnFilters.length > 0 && (
@@ -615,7 +703,7 @@ export function DataTable({
                                 ref={field.ref}
                                 onBlur={field.onBlur}
                                 value={(field.value as number | string) ?? ""}
-                                onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                                onChange={e => field.onChange(e.target.value)}
                                 id="age"
                                 type="number"
                                 placeholder="Ej. 30"

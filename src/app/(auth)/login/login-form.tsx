@@ -46,6 +46,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   async function onSubmit({ email, password, rememberMe }: SignInValues) {
     setError(null);
     setLoading(true);
+    const toastId = toast.loading("Iniciando sesión")
+
 
     const { error } = await authClient.signIn.email({
       email,
@@ -54,9 +56,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     });
 
     setLoading(false);
+    toast.dismiss(toastId)
 
     if (error?.code) {
       setError(erroresES[error.code] || "Por favor intenta de nuevo.");
+      toast.error("Por favor intenta de nuevo.")
     } else {
       toast.success("Bienvenido de nuevo!");
       router.push(redirect ?? "/dashboard");

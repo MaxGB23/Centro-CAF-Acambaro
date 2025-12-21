@@ -19,6 +19,18 @@ export async function createPackage(data: z.infer<typeof createPackageSchema>) {
   }
 
   try {
+    // Primero, marcar todos los paquetes activos existentes como "Terminado"
+    await prisma.clientPackage.updateMany({
+      where: {
+        clientId: result.data.clientId,
+        status: "Activo",
+      },
+      data: {
+        status: "Terminado",
+      },
+    });
+
+    // Ahora crear el nuevo paquete con estatus "Activo"
     const newPackage = await prisma.clientPackage.create({
       data: {
         clientId: result.data.clientId,
@@ -30,6 +42,7 @@ export async function createPackage(data: z.infer<typeof createPackageSchema>) {
     });
 
     revalidatePath(`/dashboard/cliente/${result.data.clientId}`);
+    revalidatePath(`/dashboard`);
     return { success: true, package: newPackage };
   } catch (error) {
     console.error("Error creating package:", error);

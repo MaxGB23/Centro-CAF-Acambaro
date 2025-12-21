@@ -52,6 +52,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
+import { IconCircleCheckFilled } from "@tabler/icons-react"
 
 interface ClientDetailViewProps {
   client: {
@@ -159,6 +160,9 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
   async function onSubmitEditInfo(data: UpdateClientFormValues) {
     setIsUpdatingClient(true)
 
+    const toastId = toast.loading("Actualizando información")
+
+    await new Promise((resolve) => setTimeout(resolve, 1000))
     const res = await updateClient({
       id: client.id,
       name: data.name,
@@ -171,12 +175,15 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
     })
 
     setIsUpdatingClient(false)
+    toast.dismiss(toastId)
+
     if (res.error) {
       toast.error(res.error)
     } else {
+      // change position of toast
       toast.success("Información actualizada correctamente")
       setOpenEditInfo(false)
-      router.refresh()
+      // router.refresh()
     }
   }
 
@@ -507,7 +514,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
   const editPackageSchema = z.object({
     packageType: z.enum(["S1", "S5", "S10", "S15", "S20"]),
     totalPrice: z.coerce.number().min(0, "El precio debe ser mayor o igual a 0"),
-    status: z.enum(["Activo", "Adeudo", "Pagado", "Terminado"]),
+    status: z.enum(["Activo", "Terminado"]),
   })
 
   type EditPackageFormValues = z.input<typeof editPackageSchema>
@@ -535,7 +542,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
     editPackageForm.reset({
       packageType: pkg.type as "S1" | "S5" | "S10" | "S15" | "S20",
       totalPrice: pkg.cost,
-      status: pkg.status as "Activo" | "Adeudo" | "Pagado" | "Terminado",
+      status: pkg.status as "Activo" | "Terminado",
     })
     setOpenEditPackage(true)
     console.log("Modal should open now, openEditPackage:", true)
@@ -592,6 +599,8 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
     })
   }
 
+
+
   // Filtered lists
   const filteredPayments = historyFilterId === "all"
     ? payments
@@ -620,11 +629,11 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                 <p className="text-muted-foreground mt-1">{client.patologia}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Badge className="px-4 py-2" variant={client.status === "Activo" ? "default" : "secondary"}>{client.status}</Badge>
+                <Badge className="px-4 py-2" variant={client.status === "Activo" ? "default" : "secondary"}>Paciente {client.status}</Badge>
                 {client.totalDebt > 0 && (
                   <Badge className="px-4 py-2" variant="destructive">Adeudo: {formatCurrency(client.totalDebt)}</Badge>
                 )}
-                {client.activePackage && <Badge className="px-4 py-2" variant="outline">{packageNames[client.activePackage.type] || client.activePackage.type}</Badge>}
+                {client.activePackage && <Badge className="px-4 py-2" variant="default">Paquete de {packageNames[client.activePackage.type] || client.activePackage.type}</Badge>}
               </div>
             </div>
           </div>
@@ -649,7 +658,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                       </div>
                       <Dialog open={openEditInfo} onOpenChange={setOpenEditInfo}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="lg">
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </Button>
@@ -669,7 +678,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                   name="name"
                                   render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                      <FieldLabel htmlFor="edit-name">Nombre completo</FieldLabel>
+                                      <FieldLabel htmlFor="edit-name">Nombre completo<span className="text-red-500">*</span></FieldLabel>
                                       <Input {...field} id="edit-name" />
                                       {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                     </Field>
@@ -682,7 +691,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                     name="age"
                                     render={({ field, fieldState }) => (
                                       <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="edit-age">Edad</FieldLabel>
+                                        <FieldLabel htmlFor="edit-age">Edad<span className="text-red-500">*</span></FieldLabel>
                                         <Input
                                           {...field}
                                           id="edit-age"
@@ -699,7 +708,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                     name="phone"
                                     render={({ field, fieldState }) => (
                                       <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="edit-phone">Teléfono</FieldLabel>
+                                        <FieldLabel htmlFor="edit-phone">Teléfono (opcional)</FieldLabel>
                                         <Input {...field} id="edit-phone" />
                                         {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                       </Field>
@@ -712,7 +721,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                   name="email"
                                   render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                      <FieldLabel htmlFor="edit-email">Email</FieldLabel>
+                                      <FieldLabel htmlFor="edit-email">Email (opcional)</FieldLabel>
                                       <Input {...field} id="edit-email" type="email" />
                                       {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                     </Field>
@@ -724,7 +733,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                   name="patologia"
                                   render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                      <FieldLabel htmlFor="edit-patologia">Patología</FieldLabel>
+                                      <FieldLabel htmlFor="edit-patologia">Patología<span className="text-red-500">*</span></FieldLabel>
                                       <Input {...field} id="edit-patologia" />
                                       {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                     </Field>
@@ -736,7 +745,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                   name="notes"
                                   render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                      <FieldLabel htmlFor="edit-notes">Notas</FieldLabel>
+                                      <FieldLabel htmlFor="edit-notes">Notas (opcional)</FieldLabel>
                                       <Textarea {...field} id="edit-notes" rows={4} />
                                       {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                     </Field>
@@ -918,7 +927,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                     id="package-price"
                                     type="number"
                                     value={(field.value as number | string) ?? ""}
-                                    onChange={e => field.onChange(e.target.valueAsNumber)}
+                                    onChange={e => field.onChange(e.target.value)}
                                   />
                                   {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
@@ -1011,8 +1020,8 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="Activo">Activo</SelectItem>
-                                    <SelectItem value="Adeudo">Adeudo</SelectItem>
-                                    <SelectItem value="Pagado">Pagado</SelectItem>
+                                    {/* <SelectItem value="Adeudo">Adeudo</SelectItem> */}
+                                    {/* <SelectItem value="Pagado">Pagado</SelectItem> */}
                                     <SelectItem value="Terminado">Terminado</SelectItem>
                                   </SelectContent>
                                 </Select>
@@ -1063,7 +1072,39 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                         </TableCell>
                         <TableCell>{formatDate(pkg.startDate)}</TableCell>
                         <TableCell>
-                          <Badge variant={pkg.status === "Activo" ? "default" : "secondary"}>{pkg.status}</Badge>
+                          <div className="flex gap-2">
+                            {pkg.status === "Activo" && (
+                              <Badge variant="outline" className="gap-1.5 text-sm">
+                                <IconCircleCheckFilled className="text-green-500 dark:text-emerald-400" />
+                                Activo
+                              </Badge>
+                            )}
+
+                            {pkg.status === "Terminado" && (
+                              <Badge variant="outline" className="gap-1.5 text-sm">
+                                <IconCircleCheckFilled />
+                                Terminado
+                              </Badge>
+                            )}
+
+                            {/* PAGO */}
+                            {pkg.cost - pkg.paid <= 0 && (
+                              <Badge variant="outline" className="gap-1.5 text-sm">
+                                <IconCircleCheckFilled className="text-blue-500 dark:text-cyan-400" />
+                                Pagado
+                              </Badge>
+                            )}
+
+                            {pkg.cost - pkg.paid > 0 && (
+                              <Badge
+                                variant="outline"
+                                className="gap-1.5 p-4 py-2 text-sm"
+                              >
+                                <IconCircleCheckFilled className="text-destructive dark:text-pink-500" />
+                                Adeudo
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -1085,13 +1126,20 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                 Agregar pago
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                disabled={pkg.sessionsCompleted >= pkg.sessionsTotal}
                                 onClick={() => {
+                                  if (pkg.sessionsCompleted >= pkg.sessionsTotal) {
+                                    return;
+                                  }
                                   setSelectedPackage(pkg)
                                   setOpenAddSession(true)
                                 }}
                               >
                                 <CalendarCheck className="mr-2 h-4 w-4" />
                                 Agregar asistencia
+                                {pkg.sessionsCompleted >= pkg.sessionsTotal && (
+                                  <span className="ml-2 text-xs text-muted-foreground">(Límite alcanzado)</span>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => onEditPackageClick(pkg)}
@@ -1318,6 +1366,43 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                 </div>
               </div>
 
+              {/* Card de Resumen Histórico */}
+              <Card className="bg-muted/30">
+                <CardContent className="p-6">
+                  <div className="grid gap-16 md:grid-cols-3 md:gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
+                        <DollarSign className="size-8 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Ganancias totales</p>
+                        <p className="text-2xl font-bold">{formatCurrency(payments.reduce((sum, p) => sum + p.amount, 0))}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                        <CalendarCheck className="size-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Total de sesiones</p>
+                        <p className="text-2xl font-bold">{sessions.length} {sessions.length === 1 ? 'sesión' : 'sesiones'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                        <Plus className="size-8 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Paquetes adquiridos</p>
+                        <p className="text-2xl font-bold">{packages.length} {packages.length === 1 ? 'paquete' : 'paquetes'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Historial de pagos */}
               <Card>
                 <CardHeader>
@@ -1424,9 +1509,33 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                           <TableCell>{formatTime(session.date)}</TableCell>
                           <TableCell>{packageNames[session.packageType] || session.packageType}</TableCell>
                           <TableCell>
-                            <Badge variant={session.status === "Completada" ? "default" : "secondary"}>
-                              {session.status}
-                            </Badge>
+                            {session.status === "Completada" && (
+                              <Badge
+                                variant="outline"
+                                className="gap-1.5 p-4 py-2 text-sm"
+                              >
+                                <IconCircleCheckFilled className="text-green-400 dark:text-green-300" />
+                                Completada
+                              </Badge>
+                            )}
+                            {session.status === "Pendiente" && (
+                              <Badge
+                                variant="outline"
+                                className="gap-1.5 p-4 py-2 text-sm"
+                              >
+                                <IconCircleCheckFilled className="text-yellow-400 dark:text-yellow-300" />
+                                Pendiente
+                              </Badge>
+                            )}
+                            {session.status === "Cancelada" && (
+                              <Badge
+                                variant="outline"
+                                className="gap-1.5 p-4 py-2 text-sm"
+                              >
+                                <IconCircleCheckFilled className="text-destructive dark:text-pink-500" />
+                                Cancelada
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
@@ -1528,7 +1637,7 @@ export function ClientDetailView({ client, packages, payments, sessions }: Clien
                                 id="edit-pay-amount"
                                 type="number"
                                 value={(field.value as number | string) ?? ""}
-                                onChange={e => field.onChange(e.target.valueAsNumber)}
+                                onChange={e => field.onChange(e.target.value)}
                               />
                               {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>

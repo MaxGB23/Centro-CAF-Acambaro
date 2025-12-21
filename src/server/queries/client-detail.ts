@@ -13,7 +13,7 @@ export async function getClientDetail(clientId: string) {
     where: { id: clientId },
     include: {
       packages: {
-        where: { status: { in: ["Activo", "Adeudo", "Pagado"] } },
+        where: { status: { in: ["Activo", "Terminado"] } },
         include: {
           sessions: true,
           payments: true,

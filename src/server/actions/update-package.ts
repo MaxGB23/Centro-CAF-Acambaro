@@ -9,7 +9,7 @@ const updatePackageSchema = z.object({
   clientId: z.string().uuid(),
   packageType: z.enum(["S1", "S5", "S10", "S15", "S20"]),
   totalPrice: z.coerce.number().min(0, "El precio debe ser mayor o igual a 0"),
-  status: z.enum(["Activo", "Adeudo", "Pagado", "Terminado"]),
+  status: z.enum(["Activo", "Terminado"]),
 });
 
 export async function updatePackage(data: z.infer<typeof updatePackageSchema>) {
@@ -21,6 +21,20 @@ export async function updatePackage(data: z.infer<typeof updatePackageSchema>) {
 
   try {
     const { packageId, clientId, packageType, totalPrice, status } = result.data;
+
+    // Si el nuevo estatus es "Activo", marcar todos los demás paquetes activos como "Terminado"
+    if (status === "Activo") {
+      await prisma.clientPackage.updateMany({
+        where: {
+          clientId: clientId,
+          status: "Activo",
+          id: { not: packageId }, // Excluir el paquete que estamos actualizando
+        },
+        data: {
+          status: "Terminado",
+        },
+      }); 
+    }
 
     const updatedPackage = await prisma.clientPackage.update({
       where: { id: packageId },
